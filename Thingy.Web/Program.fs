@@ -27,7 +27,7 @@ module Views =
     open GiraffeViewEngine
 
     let layout (content: XmlNode list) =
-        html [] [
+        html [ _lang "en" ] [
             head [] [
                 title []  [ encodedText "FSharpThingy" ]
                 link [ _rel  "stylesheet"
@@ -44,6 +44,14 @@ module Views =
         [
             partial()
             p [] [ encodedText model.Text ]
+            form[ _action "/go"
+                  _method "POST"] [
+                input [ _name "name" 
+                        _type "text"]
+                input [ _name "price" 
+                        _type "text"]
+                input [ _type "submit"]
+            ]
         ] |> layout
 
 // ---------------------------------
@@ -55,6 +63,12 @@ let indexHandler (name : string) =
     let model     = { Text = greetings }
     let view      = Views.index model
     htmlView view
+    
+[<CLIMutable>]
+type Product = {
+    Name: String
+    Price: decimal
+}
 
 let webApp =
     choose [
@@ -62,6 +76,10 @@ let webApp =
             choose [
                 route "/" >=> indexHandler "world"
                 routef "/hello/%s" indexHandler
+            ]
+        POST >=> 
+            choose [
+                route "/go" >=> bindForm<Product> None json
             ]
         setStatusCode 404 >=> text "Not Found" ]
 
