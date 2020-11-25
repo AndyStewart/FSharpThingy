@@ -2,6 +2,9 @@ module FSharpThingy.App
 
 open System
 open System.IO
+open Dapper.FSharp
+open Dapper.FSharp.MSSQL
+open Microsoft.Data.SqlClient
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Cors.Infrastructure
 open Microsoft.AspNetCore.Hosting
@@ -9,6 +12,9 @@ open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Microsoft.Extensions.DependencyInjection
 open Giraffe
+open FSharp.Control.Tasks.V2.ContextInsensitive
+
+Dapper.FSharp.OptionTypes.register()
 
 // ---------------------------------
 // Models
@@ -69,6 +75,24 @@ type Product = {
     Name: String
     Price: decimal
 }
+let conn = new SqlConnection("Server=localhost;Initial Catalog=Thingies;Persist Security Info=False;User ID=sa;Password=h8j3jB4*YdFm6ey;Connection Timeout=30;")
+
+type DomainProduct = {
+    Name: String
+    Price: decimal
+}
+
+let createProduct : HttpHandler =
+    fun next ctx ->
+        task {
+            let! product = ctx.BindFormAsync<Product>()
+            let domainProduct = {Name= product.Name; Price= product.Price}:DomainProduct
+            insert {
+                table "Product"
+                value domainProduct
+            } |> conn.InsertAsync |> ignore
+            return! json product next ctx
+        }
 
 let webApp =
     choose [
@@ -79,7 +103,7 @@ let webApp =
             ]
         POST >=> 
             choose [
-                route "/go" >=> bindForm<Product> None json
+                route "/go" >=> createProduct
             ]
         setStatusCode 404 >=> text "Not Found" ]
 

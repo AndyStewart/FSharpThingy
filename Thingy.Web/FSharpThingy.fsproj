@@ -9,6 +9,8 @@
   <ItemGroup>
     <PackageReference Include="Giraffe" Version="4.1.*" />
     <PackageReference Include="TaskBuilder.fs" Version="2.1.*" />
+    <PackageReference Include="Dapper.FSharp" Version="1.14.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>
